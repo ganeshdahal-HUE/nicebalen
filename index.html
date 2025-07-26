@@ -159,20 +159,20 @@
       border-radius: 6px;
       transition: width 0.5s ease-in-out;
     }
-    /* Overlay for desktop site message */
+    /* Overlay for desktop site message and password modal */
     .overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.7); /* Darker overlay for modals */
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1000;
     }
-    .message-box {
+    .message-box, .modal-box {
       background-color: white;
       padding: 2rem;
       border-radius: 0.75rem;
@@ -182,6 +182,59 @@
       font-size: 1.5rem;
       font-weight: bold;
       animation: superPop 0.3s ease-out;
+      max-width: 90%; /* Ensure responsiveness */
+      width: 400px; /* Max width for modals */
+    }
+    .modal-box {
+        font-size: 1.2rem;
+    }
+    .modal-box input[type="password"] {
+        width: 100%;
+        padding: 0.75rem;
+        margin-top: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+    }
+    .modal-box button {
+        margin-top: 1rem;
+    }
+    .video-player-modal {
+        background-color: black; /* Black background for video modal */
+        padding: 0;
+        border-radius: 0.75rem;
+        overflow: hidden; /* Hide overflow from iframe */
+        width: 90vw; /* Responsive width */
+        height: 50.625vw; /* 16:9 aspect ratio (90vw * 9 / 16) */
+        max-width: 960px; /* Max width for typical 16:9 video */
+        max-height: 540px; /* Max height for typical 16:9 video */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+    .video-player-modal .close-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.2rem;
+        cursor: pointer;
+        z-index: 1001;
+    }
+    .video-player-modal iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
     }
   </style>
 </head>
@@ -225,59 +278,62 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // Daily Quiz Data (50 days)
+    // Helper function to get the preceding and successive alphabet characters
+    const getPrecedingAndSuccessiveChars = (char) => {
+      if (!char || typeof char !== 'string' || char.length !== 1) {
+        return { preceding: '', successive: '' };
+      }
+      const lowerChar = char.toLowerCase();
+      const charCode = lowerChar.charCodeAt(0);
+
+      let preceding = '';
+      let successive = '';
+
+      if (charCode >= 97 && charCode <= 122) { // 'a' to 'z'
+        preceding = String.fromCharCode(charCode === 97 ? 122 : charCode - 1); // 'a' -> 'z', otherwise char - 1
+        successive = String.fromCharCode(charCode === 122 ? 97 : charCode + 1); // 'z' -> 'a', otherwise char + 1
+      }
+      return { preceding, successive };
+    };
+
+    // Daily Quiz Data (50 days) - Updated as per user's new list
     const dailyQuizzes = [
-      { day: 1, subject: "Science", title: "Physics Fundamentals", link: "https://ganeshdahal-hue.github.io/Science-quiz-z/", status: "Pending" },
-      { day: 2, subject: "Math", title: "Algebra Basics", link: "https://ganeshdahal-hue.github.io/math-quiz/", status: "Pending" },
+      { day: 1, subject: "Mixed", title: "Mixed Subject Challenge", link: "https://ganeshdahal-hue.github.io/mix/", status: "Pending" },
+      { day: 2, subject: "Science", title: "Physics Practice Test", link: "https://ganeshdahal-hue.github.io/physis/", status: "Pending" },
       { day: 3, subject: "English", title: "Grammar Essentials", link: "https://ganeshdahal-hue.github.io/english/", status: "Pending" },
       { day: 4, subject: "GK", title: "World Geography", link: "https://ganeshdahal-hue.github.io/GK/", status: "Pending" },
-      { day: 5, subject: "Science", title: "Chemistry Basics", link: "https://ganeshdahal-hue.github.io/physic/", status: "Pending" },
+      { day: 5, subject: "Science", title: "Physics Fundamentals", link: "https://ganeshdahal-hue.github.io/physic/", status: "Pending" },
       { day: 6, subject: "Math", title: "Geometry Challenge", link: "https://ganeshdahal-hue.github.io/mathematic/", status: "Pending" },
       { day: 7, subject: "English", title: "Vocabulary Boost", link: "https://ganeshdahal-hue.github.io/english-set/", status: "Pending" },
       { day: 8, subject: "GK", title: "History Trivia", link: "https://ganeshdahal-hue.github.io/GKK-/", status: "Pending" },
       { day: 9, subject: "Science", title: "Biology Essentials", link: "https://ganeshdahal-hue.github.io/chemistry/", status: "Pending" },
-      { day: 10, subject: "Math", title: "Arithmetic Practice", link: "https://ganeshdahal-hue.github.io/math-practice/", status: "Pending" },
-      { day: 11, subject: "English", title: "Reading Comprehension", link: "https://ganeshdahal-hue.github.io/grammar/", status: "Pending" },
-      { day: 12, subject: "GK", title: "Science Trivia", link: "https://ganeshdahal-hue.github.io/GK-2/", status: "Pending" },
-      { day: 13, subject: "Science", title: "Physics Advanced", link: "https://ganeshdahal-hue.github.io/physicscience-/", status: "Pending" },
-      { day: 14, subject: "Scholarship", title: "Balen Scholarship Guide", link: "https://ganeshdahal-hue.github.io/Balen-Scholarship/", status: "Pending" },
-      { day: 15, subject: "Scholarship", title: "Scholarship Application Tips", link: "https://ganeshdahal-hue.github.io/Balen-Scholarships-/", status: "Pending" },
-      { day: 16, subject: "Scholarship", title: "Scholarship Exam Prep", link: "https://ganeshdahal-hue.github.io/Balen-Scholarship-and-quiz-/", status: "Pending" },
-      { day: 17, subject: "Scholarship", title: "Scholarship Strategies", link: "https://ganeshdahal-hue.github.io/scholarship-/", status: "Pending" },
-      { day: 18, subject: "Scholarship", title: "Balen Exam Insights", link: "https://ganeshdahal-hue.github.io/balenscholar/", status: "Pending" },
-      { day: 19, subject: "Scholarship", title: "Balen Scholarship Overview", link: "https://ganeshdahal-hue.github.io/balenscholarship-/", status: "Pending" },
-      { day: 20, subject: "Scholarship", title: "Balen Prep Challenge", link: "https://ganeshdahal-hue.github.io/balenscholarshipp/", status: "Pending" },
-      { day: 21, subject: "Scholarship", title: "Scholarship Mastery", link: "https://ganeshdahal-hue.github.io/balenscholarships/", status: "Pending" },
-      { day: 22, subject: "Scholarship", title: "Balen Success Guide", link: "https://ganeshdahal-hue.github.io/balenganesh/", status: "Pending" },
-      { day: 23, subject: "Mixed", title: "Mixed Subject Challenge", link: "https://ganeshdahal-hue.github.io/Balen-quizz-/", status: "Pending" },
-      { day: 24, subject: "Mixed", title: "Brain Teaser Quiz", link: "https://ganeshdahal-hue.github.io/Mind-blowing-quiz/", status: "Pending" },
-      { day: 25, subject: "Mixed", title: "Daily Mixed Quiz", link: "https://ganeshdahal-hue.github.io/quiz/", status: "Pending" },
-      { day: 26, subject: "Mixed", title: "Knowledge Booster", link: "https://ganeshdahal-hue.github.io/newwquiz/", status: "Pending" },
-      { day: 27, subject: "Mixed", title: "Ultimate Trivia", link: "https://ganeshdahal-hue.github.io/newquizz-/", status: "Pending" },
-      { day: 28, subject: "Mixed", title: "Daily Brain Challenge", link: "https://ganeshdahal-hue.github.io/todayquiz/", status: "Pending" },
-      { day: 29, subject: "Mixed", title: "Mixed Knowledge Test", link: "https://ganeshdahal-hue.github.io/newwquizz/", status: "Pending" },
-      { day: 30, subject: "Mixed", title: "All-Round Quiz", link: "https://ganeshdahal-hue.github.io/newwquizzz/", status: "Pending" },
-      { day: 31, subject: "Mixed", title: "Scholarship Prep Quiz", link: "https://ganeshdahal-hue.github.io/ganeshquiz/", status: "Pending" },
-      { day: 32, subject: "Mixed", title: "Comprehensive Quiz", link: "https://ganeshdahal-hue.github.io/newquizall/", status: "Pending" },
-      { day: 33, subject: "Mixed", title: "Mixed Mastery", link: "https://ganeshdahal-hue.github.io/mix/", status: "Pending" },
-      { day: 34, subject: "Science", title: "Physics Practice Test", link: "https://ganeshdahal-hue.github.io/physis/", status: "Pending" },
-      { day: 35, subject: "GK", title: "General Knowledge Mastery", link: "https://ganeshdahal-hue.github.io/GKK/", status: "Pending" },
-      { day: 36, subject: "Scholarship", title: "Final Scholarship Prep", link: "https://ganeshdahal-hue.github.io/Balen-Scholarship/", status: "Pending" },
-      { day: 37, subject: "Mixed", title: "Grand Final Quiz", link: "https://ganeshdahal-hue.github.io/new-quiz/", status: "Pending" },
-      { day: 38, subject: "Mixed", title: "Ultimate Challenge Quiz", link: "https://ganeshdahal-hue.github.io/newquizzzzzzzz/", status: "Pending" },
-      { day: 39, subject: "Mixed", title: "General Knowledge Quiz 1", link: "https://ganeshdahal-hue.github.io/newquiz1/", status: "Pending" },
-      { day: 40, subject: "Mixed", title: "General Knowledge Quiz 2", link: "https://ganeshdahal-hue.github.io/newquiz-2-/", status: "Pending" },
-      { day: 41, subject: "Mixed", title: "General Knowledge Quiz 3", link: "https://ganeshdahal-hue.github.io/newquiz3/", status: "Pending" },
-      { day: 42, subject: "Mixed", title: "General Knowledge Quiz 4", link: "https://ganeshdahal-hue.github.io/newquiz4/", status: "Pending" },
-      { day: 43, subject: "English", title: "Grammar Mastery Quiz", link: "https://ganeshdahal-hue.github.io/grammarquiz/", status: "Pending" },
-      { day: 44, subject: "Science", title: "Science MCQs Challenge", link: "https://ganeshdahal-hue.github.io/sciencemcqs45/", status: "Pending" },
-      // New quizzes for days 45-50
-      { day: 45, subject: "Mixed", title: "Entrance Question 2080", link: "https://github.com/ganeshdahal-HUE/entrancequestion2080.git", status: "Pending" },
-      { day: 46, subject: "English", title: "English Grammar Test", link: "https://github.com/ganeshdahal-HUE/english-grammar.git", status: "Pending" },
-      { day: 47, subject: "Mixed", title: "Advanced GK Challenge", link: "https://ganeshdahal-hue.github.io/GKK/", status: "Pending" }, // Reusing link
-      { day: 48, subject: "Science", title: "Biology Deep Dive", link: "https://ganeshdahal-hue.github.io/chemistry/", status: "Pending" }, // Reusing link
-      { day: 49, subject: "Math", title: "Complex Math Problems", link: "https://ganeshdahal-hue.github.io/mathematic/", status: "Pending" }, // Reusing link
-      { day: 50, subject: "Scholarship", title: "Final Scholarship Mock", link: "https://ganeshdahal-hue.github.io/newquiz1/", status: "Pending" }, // Link updated
+      { day: 10, subject: "English", title: "Reading Comprehension", link: "https://ganeshdahal-hue.github.io/grammar/", status: "Pending" },
+      { day: 11, subject: "GK", title: "Science Trivia", link: "https://ganeshdahal-hue.github.io/GK-2/", status: "Pending" },
+      { day: 12, subject: "Science", title: "Physics Advanced", link: "https://ganeshdahal-hue.github.io/physicscience-/", status: "Pending" },
+      { day: 13, subject: "Scholarship", title: "Scholarship Strategies", link: "https://ganeshdahal-hue.github.io/scholarship-/", status: "Pending" },
+      { day: 14, subject: "Scholarship", title: "Balen Exam Insights", link: "https://ganeshdahal-hue.github.io/balenscholar/", status: "Pending" },
+      { day: 15, subject: "Scholarship", title: "Balen Prep Challenge", link: "https://ganeshdahal-hue.github.io/balenscholarshipp/", status: "Pending" },
+      { day: 16, subject: "Mixed", title: "General Knowledge Mastery", link: "https://ganeshdahal-hue.github.io/GKK/", status: "Pending" },
+      { day: 17, subject: "Scholarship", title: "Mixed Subject Challenge", link: "https://ganeshdahal-hue.github.io/Balen-quizz-/", status: "Pending" },
+      { day: 18, subject: "Scholarship", title: "Balen Success Guide", link: "https://ganeshdahal-hue.github.io/balenganesh/", status: "Pending" },
+      { day: 19, subject: "Science", title: "Biology Deep Dive", link: "https://ganeshdahal-hue.github.io/biology-deep-dive/", status: "Pending" },
+      { day: 20, subject: "Mixed", title: "Knowledge Booster", link: "https://ganeshdahal-hue.github.io/newwquiz/", status: "Pending" },
+      { day: 21, subject: "Mixed", title: "Ultimate Trivia", link: "https://ganeshdahal-hue.github.io/newquizz-/", status: "Pending" },
+      { day: 22, subject: "Mixed", title: "Daily Brain Challenge", link: "https://ganeshdahal-hue.github.io/todayquiz/", status: "Pending" },
+      { day: 23, subject: "Mixed", title: "Biology Bonus", link: "https://ganeshdahal-hue.github.io/biology-bonus/", status: "Pending" },
+      { day: 24, subject: "Mixed", title: "All-Round Quiz", link: "https://ganeshdahal-hue.github.io/newwquizzz/", status: "Pending" },
+      { day: 25, subject: "Mixed", title: "Scholarship Prep Quiz", link: "https://ganeshdahal-hue.github.io/ganeshquiz/", status: "Pending" },
+      { day: 26, subject: "Mixed", title: "Comprehensive Quiz", link: "https://ganeshdahal-hue.github.io/newquizall/", status: "Pending" },
+      { day: 27, subject: "Mixed", title: "Grand Final Quiz", link: "https://ganeshdahal-hue.github.io/new-quiz/", status: "Pending" },
+      { day: 28, subject: "Mixed", title: "Ultimate Challenge Quiz", link: "https://ganeshdahal-hue.github.io/newquizzzzzzzz/", status: "Pending" },
+      { day: 29, subject: "Mixed", title: "General Knowledge Quiz 1", link: "https://ganeshdahal-hue.github.io/newquiz1/", status: "Pending" },
+      { day: 30, subject: "Mixed", title: "General Knowledge Quiz 2", link: "https://ganeshdahal-hue.github.io/newquiz-2-/", status: "Pending" },
+      { day: 31, subject: "Mixed", title: "General Knowledge Quiz 3", link: "https://ganeshdahal-hue.github.io/newquiz3/", status: "Pending" },
+      { day: 32, subject: "Mixed", title: "General Knowledge Quiz 4", link: "https://ganeshdahal-hue.github.io/newquiz4/", status: "Pending" },
+      { day: 33, subject: "English", title: "Grammar Mastery Quiz", link: "https://ganeshdahal-hue.github.io/grammarquiz/", status: "Pending" },
+      { day: 34, subject: "Science", title: "Science MCQs Challenge", link: "https://ganeshdahal-hue.github.io/sciencemcqs45/", status: "Pending" },
+      { day: 35, subject: "Scholarship", title: "Scholarship Exam Prep", link: "https://ganeshdahal-hue.github.io/balenscholarshipp/", status: "Pending" },
+      { day: 36, subject: "Scholarship", title: "Scholarship Mastery", link: "https://ganeshdahal-hue.github.io/balenscholarships/", status: "Pending" },
     ];
 
     // Resource Data
@@ -285,7 +341,7 @@
       {
         category: "Premium Materials",
         items: [
-          { title: "Bridge Course Book", link: "https://drive.google.com/file/d/1lUuQUNbDakJIGCUPdDJ4Dt9z_iBNxf07/view?usp=sharing" }, // Updated link
+          { title: "Bridge Course Book", link: "https://drive.google.com/file/d/1lUuQUNbDakJIGCUPdDJ4Dt9z_iBNxf07/view?usp=sharing" },
           { title: "Advance Mathematics Book", link: "https://drive.google.com/file/d/1DpIqrtanBnn5cWdXPCY6c18NdtnwKGRl/view?usp=sharing" },
           { title: "Mathematics Book", link: "https://drive.google.com/file/d/1yfgpjpx9nIQAn9bpkB9CN2KnWJAWRbuU/view?usp=drive_link" },
           { title: "Saint Xavier 20 Practice Set", link: "https://drive.google.com/drive/folders/1AnPNaUzF69Ctqk5nz_j0WPPn2ThMV4ui?usp=drive_link" },
@@ -297,17 +353,18 @@
           { title: "New MCQs Set", link: "https://drive.google.com/drive/folders/1YiFTUm5HYyeIqeCYPw_yBsmfaV91a8JP?usp=drive_link" },
           { title: "Science All Chapter Notes", link: "https://drive.google.com/drive/folders/1t5JGigm1OkFJ9T64IEMuVqR1a_FEutkI?usp=drive_link" },
           { title: "Grammar Tips", link: "https://drive.google.com/drive/folders/1yfCKCdSrWORe6ZV0yJiLwLFBI5xZGt5-?usp=drive_link" },
-          { title: "Science chapter wise MCQs", link: "https://drive.google.com/file/d/1eazkSqbO_J6PanBj7-sPdzMDd-uEuR3j/view?usp=sharing" }, // New
-          { title: "Entrance Question", link: "https://drive.google.com/file/d/1aACIunJxfDtSeQdAAU-vXhwUMxp78Jky/view?usp=drive_link" }, // New
-          { title: "Special Book for Balen Scholarship", link: "https://drive.google.com/file/d/1EPjk91zWWl-OHOqawwvJJhnHma9RveE7/view?usp=sharing" }, // New
-          { title: "Grammar MCQs", link: "https://drive.google.com/file/d/1A3-Hlv1dmh9aSrqNxms3qP-upFEJ6nCg/view?usp=drive_link" }, // New
-          { title: "Balen Entrance qn 2082", link: "https://drive.google.com/file/d/1aACIunJxfDtSeQdAAU-vXhwUMxp78Jky/view?usp=drive_link" }, // New
+          { title: "Science chapter wise MCQs", link: "https://drive.google.com/file/d/1eazkSqbO_J6PanBj7-sPdzMDd-uEuR3j/view?usp=sharing" },
+          { title: "Entrance Question", link: "https://drive.google.com/file/d/1aACIunJxfDtSeQdAAU-vXhwUMxp78Jky/view?usp=drive_link" },
+          { title: "Special Book for Balen Scholarship", link: "https://drive.google.com/file/d/1EPjk91zWWl-OHOqawwvJJhnHma9RveE7/view?usp=sharing" },
+          { title: "Grammar MCQs", link: "https://drive.google.com/file/d/1A3-Hlv1dmh9aSrqNxms3qP-upFEJ6nCg/view?usp=drive_link" },
+          { title: "Balen Entrance qn 2082", link: "https://drive.google.com/file/d/1aACIunJxfDtSeQdAAU-vXhwUMxp78Jky/view?usp=drive_link" },
+          { title: "Daily Updated PDF", link: "https://drive.google.com/drive/folders/1NQFdxJ0uYwOMpVcD-TKFZ4-zB5Xb70Ru?usp=sharing" }, // Added to Premium
         ],
       },
       {
         category: "Free Resources",
         items: [
-          { title: "Daily Updated PDF", link: "https://drive.google.com/drive/folders/1YiFTUm5HYyeIqeCYPw_yBsmfaV91a8JP?usp=drive_link" },
+          { title: "Daily Updated PDF", link: "https://drive.google.com/drive/folders/1On-EmwuZ6yyRFKixIneRA9ZjLsX_ally?usp=drive_link" }, // Updated link
           { title: "Sample Questions", link: "https://drive.google.com/file/d/1DksWWHY6JQUFzOy2Jv97HPlsgD0WNHVo/view?usp=drive_link" },
           { title: "SEE Gear Up Book", link: "https://drive.google.com/file/d/1uypKarUcoYgDnD0pISv96-8r9UTKhU6O/view?usp=sharing" },
           { title: "Model Questions 1", link: "https://drive.google.com/file/d/1vs5IwyLGL_h1WtpfkMUrlEicz2lbUtZ/view?usp=drive_link" },
@@ -327,10 +384,10 @@
           { title: "Saint Xavier CLZ 2", link: "https://www.facebook.com/share/p/19igTfRAwo/" },
           { title: "KIST College", link: "https://www.facebook.com/share/p/1CErQbwi43/" },
           { title: "GK MCQs", link: "https://drive.google.com/file/d/1Jq-lg3gqcuKfFEriodQmTM8pvpKpTSeX/view?usp=drive_link" },
-          { title: "Practice question", link: "https://drive.google.com/file/d/1FL6Yuz4byhfSM-1HP7_NKNTQzV3TNerf/view?usp=drive_link" }, // New
-          { title: "KIST college model Question", link: "https://drive.google.com/file/d/1tDrJsd4LqmE2lETvTzMjBmDAE6zJ8qmO/view?usp=drive_link" }, // New
-          { title: "Idiom and pharases", link: "https://drive.google.com/file/d/1O_34SqIb01li2MgYNPUeY6K_E_zTbqQO/view?usp=drive_link" }, // New
-          { title: "All subject MCQs", link: "https://drive.google.com/file/d/1Aqz8fcIMbHqgoHJZScUchDWV2P3Vv7OA/view?usp=sharing" }, // New
+          { title: "Practice question", link: "https://drive.google.com/file/d/1FL6Yuz4byhfSM-1HP7_NKNTQzV3TNerf/view?usp=drive_link" },
+          { title: "KIST college model Question", link: "https://drive.google.com/file/d/1tDrJsd4LqmE2lETvTzMjBmDAE6zJ8qmO/view?usp=drive_link" },
+          { title: "Idiom and pharases", link: "https://drive.google.com/file/d/1O_34SqIb01li2MgYNPUeY6K_E_zTbqQO/view?usp=drive_link" },
+          { title: "All subject MCQs", link: "https://drive.google.com/file/d/1Aqz8fcIMbHqgoHJZScUchDWV2P3Vv7OA/view?usp=sharing" },
         ],
       },
     ];
@@ -844,10 +901,30 @@
     };
 
     // Quizzes Section Component
-    const QuizzesSection = () => {
+    const QuizzesSection = ({ userName }) => {
       const [currentPage, setCurrentPage] = useState(1);
       const [showDesktopSiteMessage, setShowDesktopSiteMessage] = useState(false);
+      const [showPasswordModal, setShowPasswordModal] = useState(false);
+      const [passwordInput, setPasswordInput] = useState('');
+      const [passwordError, setPasswordError] = useState('');
+
       const quizzesPerPage = 10;
+
+      // Helper to get completed quizzes from localStorage
+      const getCompletedQuizzes = () => {
+        try {
+          const completed = localStorage.getItem('balenCompletedQuizzes');
+          return completed ? JSON.parse(completed) : {};
+        } catch (e) {
+          console.error("Error parsing completed quizzes from localStorage", e);
+          return {};
+        }
+      };
+
+      // Helper to save completed quizzes to localStorage
+      const saveCompletedQuizzes = (completedQuizzes) => {
+        localStorage.setItem('balenCompletedQuizzes', JSON.stringify(completedQuizzes));
+      };
 
       // Calculate days passed since first access for quiz unlocking
       const getDaysPassed = () => {
@@ -859,30 +936,50 @@
         }
         const appStartDate = new Date(appStartDateStr);
         const today = new Date();
-        const diffTime = Math.abs(today.getTime() - appStartDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffTime = today.getTime() - appStartDate.getTime(); // Use positive difference
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Use floor to count full days passed
         return diffDays;
       };
 
       const unlockedDays = getDaysPassed();
 
-      // Prepare quizzes with unlocked status and interchanged links
+      // Check if premium quizzes are unlocked
+      const isPremiumUnlocked = () => {
+        return localStorage.getItem('balenPremiumUnlocked') === 'true';
+      };
+
+      // Generate password based on user name
+      const generatePassword = (name) => {
+        if (!name || name.length < 3) {
+          return null; // Name too short for password logic
+        }
+        const thirdChar = name.charAt(2).toLowerCase();
+        const { preceding, successive } = getPrecedingAndSuccessiveChars(thirdChar);
+        return `${name}@1234${preceding}${successive}`;
+      };
+
+      // Prepare quizzes with unlocked/locked/completed status
       const preparedQuizzes = dailyQuizzes.map(quiz => {
-        let actualLink = quiz.link;
-        // Interchange links for Day 1 and Day 14
-        if (quiz.day === 1) {
-          const day14Quiz = dailyQuizzes.find(q => q.day === 14);
-          if (day14Quiz) actualLink = day14Quiz.link;
-        } else if (quiz.day === 14) {
-          const day1Quiz = dailyQuizzes.find(q => q.day === 1);
-          if (day1Quiz) actualLink = day1Quiz.link;
+        const completedQuizzes = getCompletedQuizzes();
+        const isCompleted = completedQuizzes[quiz.day] === true;
+
+        let status = "Locked";
+        // Quizzes 1-20 are unlocked based on daily progression
+        if (quiz.day <= 20) {
+          if (quiz.day <= (unlockedDays * 2) + 2) { // Unlock 2 quizzes per day
+            status = "Unlocked";
+          }
+        } else { // Quizzes after 20 require premium unlock
+          if (isPremiumUnlocked() && quiz.day <= (unlockedDays * 2) + 2) { // Still respect daily unlock after premium
+            status = "Unlocked";
+          }
         }
 
-        return {
-          ...quiz,
-          link: actualLink,
-          status: quiz.day <= (unlockedDays + 1) ? "Unlocked" : "Locked" // Day 1 is unlocked on day 0, Day 2 on day 1 etc.
-        };
+        if (isCompleted) {
+          status = "Completed";
+        }
+
+        return { ...quiz, status };
       });
 
       // Calculate total pages
@@ -897,23 +994,41 @@
       const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
       // Progress Bar Calculation
-      const completedQuizzesCount = preparedQuizzes.filter(quiz => quiz.status === "Completed").length;
-      const progressPercentage = (completedQuizzesCount / preparedQuizzes.length) * 100;
+      const completedQuizzesCount = Object.values(getCompletedQuizzes()).filter(status => status === true).length;
+      const progressPercentage = (completedQuizzesCount / dailyQuizzes.length) * 100;
 
-      // Handle quiz click to show message
-      const handleQuizClick = (e, quizLink, isLocked) => {
+      // Handle quiz click to show message and mark as completed
+      const handleQuizClick = (e, quizDay, quizLink, isLocked) => {
         if (isLocked) {
           e.preventDefault(); // Prevent navigation if locked
-          // Optionally, show a message that the quiz is locked
-          // console.log("This quiz is locked. Come back tomorrow!");
           return;
         }
+
+        // Mark quiz as completed
+        const currentCompleted = getCompletedQuizzes();
+        currentCompleted[quizDay] = true;
+        saveCompletedQuizzes(currentCompleted);
+
         setShowDesktopSiteMessage(true);
         setTimeout(() => {
           setShowDesktopSiteMessage(false);
+          window.open(quizLink, '_blank'); // Open link after message disappears
         }, 2000); // Message disappears after 2 seconds
-        // Allow navigation after message shows
-        // The browser will handle the navigation to quizLink
+      };
+
+      // Handle password submission
+      const handlePasswordSubmit = (e) => {
+        e.preventDefault();
+        const expectedPassword = generatePassword(userName);
+        if (passwordInput === expectedPassword) {
+          localStorage.setItem('balenPremiumUnlocked', 'true');
+          setShowPasswordModal(false);
+          setPasswordError('');
+          // Force re-render of quizzes to apply new unlocked status
+          setCurrentPage(currentPage); // A simple way to trigger re-render
+        } else {
+          setPasswordError('Incorrect password. Please try again.');
+        }
       };
 
       return (
@@ -928,9 +1043,22 @@
                 <div className="quiz-progress-fill" style={{ width: `${progressPercentage}%` }}></div>
               </div>
               <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
-                {completedQuizzesCount} out of {preparedQuizzes.length} quizzes completed ({progressPercentage.toFixed(1)}%)
+                {completedQuizzesCount} out of {dailyQuizzes.length} quizzes completed ({progressPercentage.toFixed(1)}%)
               </p>
             </div>
+
+            {/* Unlock Quiz Button (appears after 20th quiz) */}
+            {unlockedDays * 2 + 2 >= 20 && !isPremiumUnlocked() && (
+                <div className="text-center mb-8">
+                    <button
+                        onClick={() => setShowPasswordModal(true)}
+                        className="gradient-button text-white font-bold py-3 px-8 rounded-full shadow-lg text-lg uppercase tracking-wide animate-pulse"
+                    >
+                        Unlock Quizzes (20+)
+                    </button>
+                </div>
+            )}
+
 
             {/* Desktop Site Message Overlay */}
             {showDesktopSiteMessage && (
@@ -941,25 +1069,52 @@
               </div>
             )}
 
+            {/* Password Modal */}
+            {showPasswordModal && (
+              <div className="overlay">
+                <div className="modal-box">
+                  <h3 className="text-2xl font-bold mb-4">Enter Password to Unlock Quizzes</h3>
+                  <p className="text-gray-700 mb-4">Password is your name + "@1234" + (preceding and successive alphabet of 3rd letter of your name).</p>
+                  <form onSubmit={handlePasswordSubmit}>
+                    <input
+                      type="password"
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      placeholder="Enter password"
+                      className="border p-2 rounded w-full mb-4"
+                      required
+                    />
+                    {passwordError && <p className="text-red-500 text-sm mb-2">{passwordError}</p>}
+                    <button type="submit" className="gradient-button text-white font-bold py-2 px-4 rounded-full shadow-md mr-2">
+                      Submit
+                    </button>
+                    <button type="button" onClick={() => setShowPasswordModal(false)} className="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full shadow-md">
+                      Cancel
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentQuizzes.map((quiz) => (
                 <div key={quiz.day} className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg card-hover animate-fadeIn">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Day {quiz.day}: {quiz.title}</h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-3">Subject: {quiz.subject}</p>
-                  <p className={`font-semibold ${quiz.status === "Unlocked" ? "text-green-600" : "text-red-600"} dark:text-yellow-400 mb-4`}>
+                  <p className={`font-semibold ${quiz.status === "Completed" ? "text-green-600" : quiz.status === "Unlocked" ? "text-blue-600" : "text-red-600"} dark:text-yellow-400 mb-4`}>
                     Status: {quiz.status}
                   </p>
                   <a
                     href={quiz.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={(e) => handleQuizClick(e, quiz.link, quiz.status === "Locked")}
+                    onClick={(e) => handleQuizClick(e, quiz.day, quiz.link, quiz.status === "Locked")}
                     className={`inline-block font-bold py-2 px-4 rounded-full shadow-md text-sm ${
-                      quiz.status === "Unlocked" ? "gradient-button text-white" : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      quiz.status !== "Locked" ? "gradient-button text-white" : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
                     aria-disabled={quiz.status === "Locked"}
                   >
-                    {quiz.status === "Unlocked" ? (
+                    {quiz.status !== "Locked" ? (
                       <span>Start Quiz <i className="fas fa-arrow-right ml-2"></i></span>
                     ) : (
                       <span>Locked <i className="fas fa-lock ml-2"></i></span>
@@ -991,54 +1146,90 @@
     };
 
     // Resources Section Component
-    const ResourcesSection = () => (
-      <section id="resources" className="py-12 px-4 md:px-8 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-        <div className="container mx-auto">
-          <h2 className="text-4xl font-extrabold text-center section-heading dark:text-red-400 mb-10 animate-fadeIn">Study Resources</h2>
+    const ResourcesSection = () => {
+        const [showVideoModal, setShowVideoModal] = useState(false);
+        const youtubeVideoId = "4J06Ynw9x9I"; // Extracted from the provided YouTube link
 
-          {/* Premium Header */}
-          <div className="premium-header text-center mb-12">
-            <h4 className="text-4xl font-extrabold mb-2">Unlock Your Full Potential!</h4>
-            <p className="text-xl font-semibold mb-4">
-              🎓 Ace Balen Scholarship for Just Rs. 999!
-            </p>
-            <ul>
-              <li><i className="fas fa-book-open icon"></i> 📚 Complete Resource Access: Unlock all premium materials, including Bridge Course Book, Advanced Mathematics, Grammar Guides, 300+ MCQs, and more.</li>
-              <li><i className="fas fa-rocket icon"></i> 🚀 Daily Boost: Live quizzes & interactive classes</li>
-              <li><i className="fas fa-trophy icon"></i> 🏆 Bonus Perks: Two prize-packed mock tests</li>
-              <li><i className="fas fa-star icon"></i> 💪 Your Edge: Ace the exam with confidence!</li>
-            </ul>
-            <a href="https://wa.me/9826594548" target="_blank" rel="noopener noreferrer" className="gradient-button inline-block text-white font-bold py-3 px-8 rounded-full shadow-lg mt-6 text-lg uppercase tracking-wide">
-              Get Premium Access <i className="fab fa-whatsapp ml-2"></i>
-            </a>
-          </div>
+        return (
+            <section id="resources" className="py-12 px-4 md:px-8 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                <div className="container mx-auto">
+                    <h2 className="text-4xl font-extrabold text-center section-heading dark:text-red-400 mb-10 animate-fadeIn">Study Resources</h2>
 
-          {/* Iterate through resource categories */}
-          {resources.map((categoryData, index) => (
-            <div key={index} className="mb-12">
-              <h3 className="text-3xl font-bold text-blue-700 dark:text-blue-300 mb-6 border-b-2 border-blue-300 pb-2 animate-fadeIn" style={{ animationDelay: `${0.1 * index}s` }}>
-                {categoryData.category}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {categoryData.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg card-hover animate-fadeIn" style={{ animationDelay: `${0.1 * (index + 1) + 0.05 * itemIndex}s` }}>
-                    <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{item.title}</h4>
-                    <a
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block gradient-button text-white font-bold py-2 px-4 rounded-full shadow-md text-sm"
-                    >
-                      Access Material <i className="fas fa-external-link-alt ml-2"></i>
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
+                    {/* Premium Header */}
+                    <div className="premium-header text-center mb-12">
+                        <h4 className="text-4xl font-extrabold mb-2">Unlock Your Full Potential!</h4>
+                        <p className="text-xl font-semibold mb-4">
+                            📚 What You Get:
+                        </p>
+                        <ul className="list-none p-0 text-left max-w-md mx-auto">
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ Access All given Below premium Materials</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ 3 Books – Bridge Course, Grammar (2000+ MCQs)</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ 2 maths books</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ Maths Formula</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ Full Chapterwise Notes</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ Expert Grammar & Math Tips</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ Advance MCQs + Past Year Questions</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ All College Past Papers</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ Daily Quiz + Live Quiz Every Tue & Sat</li>
+                            <li className="flex items-center mb-2"><i className="fas fa-check-circle icon mr-2 text-green-300"></i> ✅ Mock Test every Saturday</li>
+                        </ul>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+                            <a href="https://wa.me/9826594548" target="_blank" rel="noopener noreferrer" className="gradient-button inline-block text-white font-bold py-3 px-8 rounded-full shadow-lg text-lg uppercase tracking-wide">
+                                Get Premium Access <i className="fab fa-whatsapp ml-2"></i>
+                            </a>
+                            <button
+                                onClick={() => setShowVideoModal(true)}
+                                className="bg-white text-blue-600 font-bold py-3 px-8 rounded-full shadow-lg text-lg uppercase tracking-wide hover:bg-gray-100 transition-colors duration-300"
+                            >
+                                What is this? <i className="fas fa-play-circle ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Video Player Modal */}
+                    {showVideoModal && (
+                        <div className="overlay">
+                            <div className="video-player-modal">
+                                <button onClick={() => setShowVideoModal(false)} className="close-button">
+                                    &times;
+                                </button>
+                                <iframe
+                                    src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&modestbranding=1&rel=0`}
+                                    title="YouTube video player"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                ></iframe>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Iterate through resource categories */}
+                    {resources.map((categoryData, index) => (
+                        <div key={index} className="mb-12">
+                            <h3 className="text-3xl font-bold text-blue-700 dark:text-blue-300 mb-6 border-b-2 border-blue-300 pb-2 animate-fadeIn" style={{ animationDelay: `${0.1 * index}s` }}>
+                                {categoryData.category}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {categoryData.items.map((item, itemIndex) => (
+                                    <div key={itemIndex} className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg card-hover animate-fadeIn" style={{ animationDelay: `${0.1 * (index + 1) + 0.05 * itemIndex}s` }}>
+                                        <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{item.title}</h4>
+                                        <a
+                                            href={item.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-block gradient-button text-white font-bold py-2 px-4 rounded-full shadow-md text-sm"
+                                        >
+                                            Access Material <i className="fas fa-external-link-alt ml-2"></i>
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        );
+    };
 
     // Videos Section Component
     const VideosSection = () => (
@@ -1169,7 +1360,7 @@
           <main>
             {/* Render the active section based on activeSection state */}
             {activeSection === 'home' && <HomeSection setActiveSection={setActiveSection} userName={userName} />}
-            {activeSection === 'quizzes' && <QuizzesSection />}
+            {activeSection === 'quizzes' && <QuizzesSection userName={userName} />} {/* Pass userName to QuizzesSection */}
             {activeSection === 'resources' && <ResourcesSection />}
             {activeSection === 'videos' && <VideosSection />}
             {activeSection === 'faqs' && <FAQsSection />}
